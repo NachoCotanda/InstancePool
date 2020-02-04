@@ -1,0 +1,32 @@
+
+#To get network parameters:
+$virtualNetwork = Get-AzVirtualNetwork -Name "Vnet-Pool" -ResourceGroupName "IPOOL"
+$subnet = Get-AzVirtualNetworkSubnetConfig -Name "SubnetMI" -VirtualNetwork $virtualNetwork
+
+#Create Cluster
+$instancePool = Get-AzSqlInstancePool -ResourceGroupName "IPOOL" -Name "Aleson-Pool"  -SubnetId $subnet.Id -LicenseType "LicenseIncluded" -VCore 8 -Edition "GeneralPurpose" -ComputeGeneration "Gen5" -Location "northeurope"
+
+#Pool
+$virtualNetwork = Get-AzVirtualNetwork -Name "Vnet-Pool" -ResourceGroupName "IPOOL"
+$subnet = Get-AzVirtualNetworkSubnetConfig -Name "SubnetMI" -VirtualNetwork $virtualNetwork
+$instancePool = Get-AzSqlInstancePool -ResourceGroupName "IPOOL" -Name "Aleson-Pool"  -SubnetId $subnet.Id -LicenseType "LicenseIncluded" -VCore 8 -Edition "GeneralPurpose" -ComputeGeneration "Gen5" -Location "northeurope"
+
+$instanceTwo = $instancePool | Get-AzSqlInstance -Name "AlesonDev" -VCore 4 -StorageSizeInGB 32
+
+
+$instanceone = $instancePool | New-AzSqlInstance -Name "AlesonProd" -VCore 4 -StorageSizeInGB 32
+
+#create bbdd
+$poolinstancedb = New-AzSqlInstanceDatabase -Name "bbdddev" -InstanceName "AlesonDev" -ResourceGroupName "IPOOL"
+
+#get databases
+$databases = Get-AzSqlInstanceDatabase -InstanceName "AlesonDev" -ResourceGroupName "IPOOL"
+
+##Scale instance
+$instanceTwo = Get-AzSqlInstance -Name "AlesonDev"
+$instancetwo| Set-AzSqlInstance -VCore 2 -StorageSizeInGB 64 -InstancePoolName "Aleson-Pool"
+
+
+## open public endpoint
+
+$instancetwo | Set-AzSqlInstance -InstancePoolName "Aleson-Pool" -PublicDataEndpointEnabled $true
